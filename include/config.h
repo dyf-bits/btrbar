@@ -18,9 +18,25 @@
 #define BAR_WIDTH			0
 #define BAR_HEIGHT			30
 
+// convert RGBA to ARGB
+#define RGBA(value) (((value & 0xff) << 24) | (value >> 8))
+
+// charcoal colors
+#define CHARC_DARK0 0x1b160dff
+#define CHARC_DARK 0x120f09ff
+#define CHARC_DARK2 0x1f1a0fff
+#define CHARC_LIGHT1 0xd6b891ff
+#define CHARC_LIGHT2 0xc0a179ff
+#define CHARC_LIGHT3 0xa08561ff
+#define CHARC_LIGHT4 0x66553fff
+
 // Bar colors 0xARGB
-#define BG_COLOR			0xff0a0d0f
-#define FG_COLOR			0xffbbbbbb
+//#define BG_COLOR			0xff0a0d0f
+//#define FG_COLOR			0xffbbbbbb
+//#define BG_COLOR			CHARC_DARK
+//#define BG_COLOR			RGBA_TO_ARGB(0xff120f09)
+#define BG_COLOR			RGBA(CHARC_DARK0)
+#define FG_COLOR			RGBA(CHARC_LIGHT1)
 #define L_GREEN				0xff82df94
 #define GREEN				0xff00ff44
 #define GREY				0xff343a40
@@ -36,32 +52,24 @@
 #define TRAY				1
 
 // Tags config
-#define TAG_FG_ACTIVE   	0xff9ee0ea
-#define TAG_FG_OCCUPIED 	0xffbbbbbb
-#define TAG_FG_EMPTY    	0xff343a40
+//#define TAG_FG_ACTIVE   	0xff9ee0ea
+//#define TAG_FG_OCCUPIED 	0xffbbbbbb
+//#define TAG_FG_EMPTY    	0xff343a40
+#define TAG_FG_ACTIVE   	RGBA(CHARC_LIGHT1)
+#define TAG_FG_OCCUPIED 	RGBA(CHARC_LIGHT2)
+#define TAG_FG_EMPTY    	RGBA(CHARC_LIGHT4)
 #define TAG_FG_URGENT   	0xffE49186
 #define TAG_BG_COLOR    	0xff0a0d0f
 #define TAG_ICON_PADDING	14
 #define TAG_WIDTH			24
 
 static const char * const tag_icons[] = {
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	""
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"6"
 };
 
 // Tray config
@@ -76,12 +84,14 @@ static const char * const tag_icons[] = {
 #define TRAY_MENU_DISABLED_FG_COLOR 0xffE49186
 
 // Font
-#define FONT "/usr/share/fonts/TTF/Iosevka Bold Nerd Font Complete.ttf" 
+//#define FONT "/home/ad/.local/share/fonts/b/BitstromWeraNerdFont_Regular.ttf"
+#define FONT "/usr/share/fonts/TTF/UbuntuNerdFont-Regular.ttf"
 // Fontsize
-#define F_SIZE				30
+#define F_SIZE				20
 
 // Padding between blocks px
-#define BLOCK_PADDING		4
+//#define BLOCK_PADDING		4
+#define BLOCK_PADDING		8
 // Screen edge padding px
 #define EDGE_PADDING		8
 
@@ -111,7 +121,7 @@ static const block_cfg_t blocks_cfg[] = {
 		"",					/*prefix*/
 		NULL,				/*builtin function*/
 		0,					/*pfx color*/
-		CYAN,				/*fg color*/
+		RGBA(CHARC_LIGHT2),				/*fg color*/
 		BG_COLOR,			/*bg color*/
 		NULL,				/*on click*/
 		NULL,				/*on scroll*/
@@ -125,7 +135,7 @@ static const block_cfg_t blocks_cfg[] = {
 		"",					/*prefix*/
 		NULL,				/*builtin function*/
 		0,					/*pfx color*/
-		L_GREEN,			/*fg color*/
+		RGBA(CHARC_LIGHT1),			/*fg color*/
 		BG_COLOR,			/*bg color*/
 		NULL,				/*on click*/
 		NULL,				/*on scroll*/
@@ -138,23 +148,9 @@ static const block_cfg_t blocks_cfg[] = {
 	{
 		BLK_FUNC,			/*type*/
 		NULL,				/*cmd*/
-		"  ",				/*prefix*/
-		_clock,				/*builtin function*/
-		CYAN,				/*pfx color*/
-		FG_COLOR,			/*fg color*/
-		BG_COLOR,			/*bg color*/
-		clock_click,		/*on click*/
-		NULL,				/*on scroll*/
-		ALIGN_RIGHT,		/*align*/
-		30,					/*update interval s*/
-	},
-
-	{
-		BLK_FUNC,			/*type*/
-		NULL,				/*cmd*/
-		" ",				/*prefix*/
+		" ",				/*prefix*/
 		cpu_usage,			/*builtin function*/
-		0xfffbb0b0,			/*pfx color*/
+		RGBA(CHARC_LIGHT2),			/*pfx color*/
 		FG_COLOR,			/*fg color*/
 		BG_COLOR,			/*bg color*/
 		NULL,				/*on click*/
@@ -163,68 +159,26 @@ static const block_cfg_t blocks_cfg[] = {
 		1,	  				/*update interval s*/
 	},
 
-	// {
-	// 	BLK_SCRIPT,			/*type*/
-	// 	NULL,				/*cmd*/
-	// 	"      ",			/*prefix*/
-	// 	NULL,				/*builtin function*/
-	// 	CYAN,				/*pfx color*/
-	// 	FG_COLOR,			/*fg color*/
-	// 	0xff112233,			/*bg color*/
-	// 	NULL,				/*on click*/
-	// 	NULL,				/*on scroll*/
-	// 	ALIGN_RIGHT,		/*align*/
-	// 	0,					/*update interval s*/
-	// },
-	//
 	{
 		BLK_TEMP,			/*type*/
 		"/sys/class/hwmon/hwmon5/temp1_input", /*cmd*/
 		" ",				/*prefix*/
 		NULL,				/*builtin function*/
-		0xffe6ffff,			/*pfx color*/
+		RGBA(CHARC_LIGHT3),			/*pfx color*/
 		FG_COLOR,			/*fg color*/
 		BG_COLOR,			/*bg color*/
 		NULL,				/*on click*/
 		NULL,				/*on scroll*/
 		ALIGN_RIGHT,		/*align*/
 		10,					/*update interval s*/
-	},
-
-	{
-		BLK_TEMP,			/*type*/
-		"/sys/class/drm/card0/device/hwmon/hwmon3/temp1_input", /*cmd*/
-		"  ",				/*prefix*/
-		NULL,				/*builtin function*/
-		0xffe6ffff,			/*pfx color*/
-		FG_COLOR,			/*fg color*/
-		BG_COLOR,			/*bg color*/
-		NULL,				/*on click*/
-		NULL,				/*on scroll*/
-		ALIGN_RIGHT,		/*align*/
-		10,					/*update interval s*/
-	},
-
-	{
-		BLK_SCRIPT,			/*type*/
-		"~/.local/bin/get_cpu_and_gpu_power_usage", /*cmd*/
-		" ",				/*prefix*/
-		NULL,				/*builtin function*/
-		L_GREEN,			/*pfx color*/
-		FG_COLOR,			/*fg color*/
-		BG_COLOR,			/*bg color*/
-		power_consumption_click, /*on click*/
-		NULL,				/*on scroll*/
-		ALIGN_RIGHT,		/*align*/
-		7,					/*update interval s*/
 	},
 
 	{
 		BLK_FUNC,			/*type*/
 		NULL,				/*cmd*/
-		"  ",				/*prefix*/
+		" ",				/*prefix*/
 		mem_usage_simple,	/*builtin function*/
-		0xff00ff44,			/*pfx color*/
+		RGBA(CHARC_LIGHT2),			/*pfx color*/
 		FG_COLOR,			/*fg color*/
 		BG_COLOR,			/*bg color*/
 		NULL,				/*on click*/
@@ -234,30 +188,34 @@ static const block_cfg_t blocks_cfg[] = {
 	},
 
 	{
+    //for alsa, use this:
+    //BLK_SCRIPT,
+    //"amixer get Master | sed -n 's/.*\\[\\([0-9]\\+%*\\)\\].*/\\1/p' | head -n1",
 		BLK_VOL,			/*type*/
 		"wpctl get-volume @DEFAULT_AUDIO_SINK@ | tr -d 'Volume: '", /*cmd*/
 		"  ",				/*prefix*/
 		NULL,				/*builtin function*/
-		L_GREEN,			/*pfx color*/
+		RGBA(CHARC_LIGHT3),			/*pfx color*/
 		FG_COLOR,			/*fg color*/
 		BG_COLOR,			/*bg color*/
 		vol_click,			/*on click*/
 		vol_scroll,			/*on click*/
 		ALIGN_RIGHT,		/*align*/
-		90,					/*update interval s*/
+		50,					/*update interval s*/
 	},
+
 	{
 		BLK_FUNC,			/*type*/
 		NULL,				/*cmd*/
-		"  ",				/*prefix*/
-		net_usage,			/*builtin function*/
-		0xff992244,			/*pfx color*/
+		" ",				/*prefix*/
+		_clock,				/*builtin function*/
+		RGBA(CHARC_LIGHT2),				/*pfx color*/
 		FG_COLOR,			/*fg color*/
 		BG_COLOR,			/*bg color*/
-		NULL,				/*on click*/
+		clock_click,		/*on click*/
 		NULL,				/*on scroll*/
 		ALIGN_RIGHT,		/*align*/
-		5,					/*update interval s*/
+		30,					/*update interval s*/
 	},
 
 	{
