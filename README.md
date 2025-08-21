@@ -23,7 +23,7 @@ Fork of [julmajustus/btrbar](https://github.com/julmajustus/btrbar)
 - **[stb lib](https://github.com/nothings/stb)**: stb_truetype.h, stb_image.h, stb_image_resize2.h (already bundled in `include/`)
 
 ```bash
-git clone -b centerVertically https://github.com/dyf-bits/btrbar.git
+git clone https://github.com/dyf-bits/btrbar.git
 cd btrbar
 
 # Build
