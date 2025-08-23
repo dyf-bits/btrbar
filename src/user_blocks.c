@@ -6,7 +6,7 @@
 /*   By: julmajustus <julmajustus@tutanota.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/24 20:24:15 by julmajustus       #+#    #+#             */
-/*   Updated: 2025/08/13 20:28:19 by julmajustus      ###   ########.fr       */
+/*   Updated: 2025/08/23 11:54:29 by julmajustus      ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -305,10 +305,12 @@ vol_click(block_t *block, int button)
 		if (block->label[strlen(block->label) - 1] == '%') {
 			block->pfx_color = PURPLE;
 			block->prefix = " ";
+      block->interval_ms = 0;
 			memcpy(block->label, "Mute", sizeof("Mute"));
 		}
 		else {
 			block->pfx_color = L_GREEN;
+      block->interval_ms = 90;
 			update_vol_block(block);
 		}
 	}

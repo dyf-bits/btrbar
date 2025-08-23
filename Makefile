@@ -6,7 +6,7 @@
 #    By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/26 22:27:41 by julmajustus       #+#    #+#              #
-#    Updated: 2025/08/11 20:55:31 by julmajustus      ###   ########.fr        #
+#    Updated: 2025/08/23 13:50:47 by julmajustus      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -68,7 +68,9 @@ endif
 ifeq ($(BUILD), debug)
 	CFLAGS = -Og -ggdb3 -Wall -Wextra #-fsanitize=address #-Werror 
 else ifeq ($(BUILD), release)
-	CFLAGS = -Wall -Wextra -O3 -march=native
+	CFLAGS = -Wall -Wextra -O2 -pipe
+else ifeq ($(BUILD), experimental)
+	CFLAGS = -Wall -Wextra -O3 -pipe -march=native -flto -fno-plt -fno-semantic-interposition
 else
 	CFLAGS = -Wall -Wextra -g -fsanitize=address
 endif
@@ -77,7 +79,7 @@ CFLAGS  += -std=c11 -DWLR_USE_UNSTABLE \
            -I$(PROT_DIR) -I$(INC_DIR) \
            $(WAYLAND_CFLAGS) $(DBUS_CFLAGS)
 
-LDFLAGS = $(WAYLAND_LIBS) $(DBUS_LIBS) -lm 
+LDFLAGS = $(WAYLAND_LIBS) $(DBUS_LIBS) -lm -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections
 
 # Utilities
 RM = rm -rf

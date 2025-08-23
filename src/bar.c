@@ -6,7 +6,7 @@
 /*   By: julmajustus <julmajustus@tutanota.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/24 10:13:11 by julmajustus       #+#    #+#             */
-/*   Updated: 2025/08/11 21:05:43 by julmajustus      ###   ########.fr       */
+/*   Updated: 2025/08/23 13:28:19 by julmajustus      ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@
 #include <signal.h>
 
 static volatile sig_atomic_t terminate_requested = 0;
+static volatile sig_atomic_t sig_usr = 0;
 
 static inline int is_disconnect_errno(void) {
 	return errno == EPIPE || errno == ECONNRESET;
@@ -45,6 +46,15 @@ static void
 on_signal(int sig)
 {
 	(void)sig;
+  if (sig == SIGUSR1) {
+		sig_usr = 1;
+		return;
+	}
+
+	if (sig == SIGUSR2) {
+		sig_usr = 2;
+		return;
+	}
 	terminate_requested = 1;
 }
 
@@ -55,7 +65,7 @@ free_font(bar_manager_t *m)
 	free(m->atlas.pixels);
 	free(m->atlas.table);
 	m->atlas.pixels = NULL;
-	m->atlas.table  = NULL;
+	m->atlas.table = NULL;
 	m->atlas.cap = m->atlas.count = 0;
 }
 
@@ -92,12 +102,12 @@ init_font(bar_manager_t *m)
 	m->font_baseline = (int)(m->font_ascent * m->font_scale);
 	
 	m->atlas.pixels = calloc(ATLAS_W * ATLAS_H, 1);
-	m->atlas.table  = calloc(ATLAS_CAP, sizeof(glyph_entry));
-	m->atlas.cap    = ATLAS_CAP;
-	m->atlas.count  = 0;
-	m->atlas.pen_x  = 0;
-	m->atlas.pen_y  = 0;
-	m->atlas.row_h  = 0;
+	m->atlas.table = calloc(ATLAS_CAP, sizeof(glyph_entry));
+	m->atlas.cap = ATLAS_CAP;
+	m->atlas.count = 0;
+	m->atlas.pen_x = 0;
+	m->atlas.pen_y = 0;
+	m->atlas.row_h = 0;
 	if (!m->atlas.pixels || !m->atlas.table) {
 		free(m->atlas.pixels);
 		free(m->atlas.table);
@@ -111,12 +121,14 @@ install_signal_handlers(void)
 {
 	struct sigaction sa = {
 		.sa_handler = on_signal,
-		.sa_flags   = 0,
+		.sa_flags = 0,
 	};
 	sigemptyset(&sa.sa_mask);
-	sigaction(SIGINT,  &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
+  sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 }
 
 static int
@@ -128,16 +140,16 @@ init_shared_blocks(bar_manager_t *m)
 		const block_cfg_t *c = &blocks_cfg[i];
 		block_t *sb = &m->shared_blocks[i];
 
-		sb->type      = c->type;
-		sb->cmd       = c->cmd;
-		sb->prefix    = c->prefix;
+		sb->type = c->type;
+		sb->cmd = c->cmd;
+		sb->prefix = c->prefix;
 		sb->get_label = c->get_label;
 		sb->pfx_color = c->pfx_color;
-		sb->fg_color  = c->fg_color;
-		sb->bg_color  = c->bg_color;
-		sb->on_click  = c->on_click;
+		sb->fg_color = c->fg_color;
+		sb->bg_color = c->bg_color;
+		sb->on_click = c->on_click;
 		sb->on_scroll = c->on_scroll;
-		sb->align     = c->align;
+		sb->align = c->align;
 		sb->interval_ms = c->interval_ms * 1000u;
 
 		sb->last_update_ms = 0;
@@ -166,16 +178,16 @@ init_bar_blocks(bar_t *b, bar_manager_t *m)
 			bi->block = &m->shared_blocks[i];
 		} else {
 			block_t *block = &b->local_blocks[i];
-			block->type      = c->type;
-			block->cmd       = c->cmd;
-			block->prefix    = c->prefix;
+			block->type = c->type;
+			block->cmd = c->cmd;
+			block->prefix = c->prefix;
 			block->get_label = c->get_label;
 			block->pfx_color = c->pfx_color;
-			block->fg_color  = c->fg_color;
-			block->bg_color  = c->bg_color;
-			block->on_click  = c->on_click;
+			block->fg_color = c->fg_color;
+			block->bg_color = c->bg_color;
+			block->on_click = c->on_click;
 			block->on_scroll = c->on_scroll;
-			block->align     = c->align;
+			block->align = c->align;
 			block->interval_ms = c->interval_ms * 1000u;
 			block->last_update_ms = 0;
 
@@ -187,7 +199,7 @@ init_bar_blocks(bar_t *b, bar_manager_t *m)
 
 		bi->x0 = bi->x1 = bi->old_x0 = bi->old_x1 = 0;
 		bi->current_width = 0;
-		bi->seen_version  = 0;
+		bi->seen_version = 0;
 		bi->local.tray.n = 0;
 	}
 }
@@ -270,6 +282,30 @@ init_manager(bar_manager_t *m)
 	return 0;
 }
 
+static inline void
+handle_sig_usr(bar_manager_t *m, uint64_t now) {
+  
+	// Update BLK_VOL for SIGUSR1
+	if (sig_usr == 1) {
+		sig_usr = 0;
+		for (uint8_t i = 0; i < ASIZE(blocks_cfg); ++i) {
+			if (m->shared_blocks[i].type == BLK_VOL) {
+				if (update_block(&m->shared_blocks[i], now)) {
+					m->shared_blocks[i].version++;
+					for (size_t k = 0; k < m->n_bars; ++k)
+						m->bars[k]->needs_redraw = 1;
+				}
+				break;
+			}
+		}
+	}
+	// Do something else
+	if (sig_usr == 2) {
+		sig_usr = 0;
+	}
+}
+
+
 int
 run(bar_manager_t *m)
 {
@@ -284,7 +320,7 @@ run(bar_manager_t *m)
 		int64_t next = now + 3600 * 1000;
 		int shared_changed = 0;
 
-		for (long i = 0; i < ASIZE(blocks_cfg); ++i) {
+		for (uint8_t i = 0; i < ASIZE(blocks_cfg); ++i) {
 			block_t *b = &m->shared_blocks[i];
 			if (!(b->interval_ms))
 				continue;
@@ -301,11 +337,15 @@ run(bar_manager_t *m)
 				}
 				due = now + b->interval_ms;
 			}
-			if (due < next) next = due;
+			if (due < next)
+        next = due;
 		}
 
+    if (sig_usr)
+      handle_sig_usr(m, now);
+
 		if (shared_changed) {
-			for (size_t i = 0; i < m->n_bars; ++i)
+			for (uint8_t i = 0; i < m->n_bars; ++i)
 				m->bars[i]->needs_redraw = 1;
 		}
 
@@ -318,8 +358,10 @@ run(bar_manager_t *m)
 		struct pollfd fd = { .fd = wl_fd, .events = POLLIN };
 		int ret = poll(&fd, 1, timeout);
 		if (ret < 0) {
-			if (errno == EINTR)
+			if (errno == EINTR) {
+        wl_display_cancel_read(m->display);
 				continue;
+      }
 			perror("poll");
 			return RUN_WAYLAND_DISCONNECT;
 		}
@@ -344,7 +386,7 @@ run(bar_manager_t *m)
 			return RUN_WAYLAND_DISCONNECT;
 		}
 
-		for (size_t i = 0; i < m->n_bars; ++i) {
+		for (uint8_t i = 0; i < m->n_bars; ++i) {
 			bar_t *b = m->bars[i];
 			if (b->needs_redraw)
 				render_bar(b);
